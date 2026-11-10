@@ -83,6 +83,30 @@ func TestCleanClaudeEnvRemovesGatewayOverrides(t *testing.T) {
 	}
 }
 
+// A run asks Claude Code for Message Threads, which the nonessential
+// traffic switch keeps it from turning on by its flag, unless the user set
+// the switch themselves.
+func TestCleanClaudeEnvTurnsThreadsOn(t *testing.T) {
+	count := func(env []string, kv string) int {
+		n := 0
+		for _, e := range env {
+			if strings.HasPrefix(e, "CLAUDE_CODE_TETHER_LIVE=") {
+				if e != kv {
+					t.Fatalf("got %s, want %s in %q", e, kv, env)
+				}
+				n++
+			}
+		}
+		return n
+	}
+	if n := count(cleanClaudeEnv([]string{"PATH=/bin"}), "CLAUDE_CODE_TETHER_LIVE=1"); n != 1 {
+		t.Fatalf("threads asked %d times", n)
+	}
+	if n := count(cleanClaudeEnv([]string{"PATH=/bin", "CLAUDE_CODE_TETHER_LIVE=0"}), "CLAUDE_CODE_TETHER_LIVE=0"); n != 1 {
+		t.Fatalf("the user's own value appears %d times", n)
+	}
+}
+
 // fakeClaude answers each line it is given with the process it runs in and
 // how many turns that process has had, as Claude Code's stream-json does.
 // A test calls it before New(), for runsEndWithTest.

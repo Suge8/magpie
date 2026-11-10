@@ -782,7 +782,7 @@ func (c claudeCLI) asRoot(env []string) []string {
 // one in WSL is handed (wslrun's Env).
 var claudeEnvVars = []string{"ENABLE_CLAUDEAI_MCP_SERVERS", "DISABLE_AUTO_COMPACT", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
 	"DISABLE_TELEMETRY", "DISABLE_ERROR_REPORTING", "DISABLE_AUTOUPDATER", "ANTHROPIC_BETAS",
-	"CLAUDE_CODE_EXTRA_BODY", "DISABLE_PROMPT_CACHING"}
+	"CLAUDE_CODE_EXTRA_BODY", "DISABLE_PROMPT_CACHING", "CLAUDE_CODE_TETHER_LIVE"}
 
 // env is env for a run in config directory configDir ("" for the account
 // Claude Code is signed in to): for one in WSL, what of it goes in.
@@ -3729,11 +3729,23 @@ func cleanClaudeEnvTTL(env []string, ttl string) []string {
 		"CLAUDE_CODE_EXTRA_BODY": true, "ANTHROPIC_BETAS": true,
 	}
 	out := make([]string, 0, len(env)+3)
+	threadsSet := false
 	for _, e := range env {
 		k, _, _ := strings.Cut(e, "=")
 		if !blocked[k] {
 			out = append(out, e)
 		}
+		threadsSet = threadsSet || k == "CLAUDE_CODE_TETHER_LIVE"
+	}
+	// Message Threads (the message-threads beta): a turn sends only what
+	// came after the last reply, not the whole history with every image in
+	// it. Claude Code turns them on by a GrowthBook flag, which
+	// CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC keeps it from reading, so a
+	// run sent each image again every turn; this is Claude Code's own
+	// switch for them (2.1.322, its tetherShape). The user's own value,
+	// 0 too, stays
+	if !threadsSet {
+		out = append(out, "CLAUDE_CODE_TETHER_LIVE=1")
 	}
 	// no auto memory: every run works in one folder (claudeWorkDir), so a
 	// memory one conversation's caller wrote there would be in the system

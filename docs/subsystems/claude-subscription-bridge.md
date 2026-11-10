@@ -589,6 +589,20 @@ interactive, so its `/usage` asks the usage endpoint alone
 setup-token, which magpie never reads, or an API key) gets the session's
 cost instead. `TestClaudeUsageStartsNoInteractiveRun` holds it.
 
+That switch also keeps Claude Code from reading its GrowthBook flags,
+and Message Threads (the `message-threads-2026-08-12` beta) are on by one
+of them: a turn on a thread sends only what came after the last reply,
+not the whole history with every image in it. Every run is given
+`CLAUDE_CODE_TETHER_LIVE=1`, Claude Code's own switch for them (2.1.322),
+unless the user set it (`cleanClaudeEnvTTL`,
+`TestCleanClaudeEnvTurnsThreadsOn`). Measured with `claude -p` 2.1.322
+on a subscription, one ~3 MB image and two text turns after it: bytes
+sent to api.anthropic.com per turn were 681 KB, 681 KB, 681 KB with the
+switch alone (or `DISABLE_TELEMETRY` alone), 682 KB, 3 KB, 3 KB with
+neither, and 681 KB, 17 KB, 17 KB with both and threads turned on. A
+turn whose earlier history, system prompt, tools or effort changed is
+sent whole on a new thread, as Claude Code does on its own.
+
 The helper still takes a typed `/usage`, and nothing of magpie's sends it
 now: it is told `{"type":"command","command":"/usage"}`, types it, waits for the
 panel's windows ("NN% used", `commandSettle` still) and closes it with
