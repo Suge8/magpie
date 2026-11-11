@@ -782,7 +782,7 @@ func (c claudeCLI) asRoot(env []string) []string {
 // one in WSL is handed (wslrun's Env).
 var claudeEnvVars = []string{"ENABLE_CLAUDEAI_MCP_SERVERS", "DISABLE_AUTO_COMPACT", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
 	"DISABLE_TELEMETRY", "DO_NOT_TRACK", "DISABLE_ERROR_REPORTING", "DISABLE_AUTOUPDATER", "ANTHROPIC_BETAS",
-	"CLAUDE_CODE_EXTRA_BODY", "DISABLE_PROMPT_CACHING"}
+	"CLAUDE_CODE_EXTRA_BODY", "DISABLE_PROMPT_CACHING", "CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS", "CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT"}
 
 // env is env for a run in config directory configDir ("" for the account
 // Claude Code is signed in to): for one in WSL, what of it goes in.
@@ -3796,8 +3796,24 @@ func claudeRunEnv(env []string, ttl string) []string {
 			out = append(out, k+"="+v)
 		}
 	}
+	for _, kv := range claudeToolWaitVars {
+		k, _, _ := strings.Cut(kv, "=")
+		if !slices.ContainsFunc(env, func(e string) bool { return strings.HasPrefix(e, k+"=") }) {
+			out = append(out, kv)
+		}
+	}
 	return append(out, "DISABLE_AUTOUPDATER=1", "DISABLE_ERROR_REPORTING=1")
 }
+
+// claudeToolWaitVars keep a turn's run waiting on magpie's MCP calls for as
+// long as the caller's tool takes: the caller runs them and has its own
+// timeouts. Claude Code otherwise moves a call still running after 120s to
+// the background and the model goes on without the result, so the turn's
+// reply is the model's next step, made before the result came, or a reply
+// with no calls at all, and the run keeps making calls no one is shown; it
+// also aborts a call that sent nothing for 30 minutes. A value set in
+// magpie's environment stays.
+var claudeToolWaitVars = []string{"CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=0", "CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT=0"}
 
 type lockedWriter struct{ run *subscriptionRun }
 
