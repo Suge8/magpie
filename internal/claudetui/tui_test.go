@@ -679,9 +679,9 @@ func TestShimTurnsInteractive(t *testing.T) {
 	if len(texts) != 2 || !strings.Contains(texts[0], "echo: hello") || results != 2 {
 		t.Fatalf("got %v", out)
 	}
-	// a slash opening the message is pasted after a line break: words,
+	// a slash opening the message is pasted marked as the user's words,
 	// not a command
-	if !strings.Contains(texts[1], `\n/help"`) {
+	if !strings.Contains(texts[1], `[user message]\n/help"`) {
 		t.Fatalf("the second turn said %s", texts[1])
 	}
 	args, _ := os.ReadFile(filepath.Join(os.Getenv("MAGPIE_TUI_TEST_CFG"), "args"))
@@ -1189,7 +1189,8 @@ func TestPasteable(t *testing.T) {
 		want string
 	}{
 		{"hello", false, "hello"},
-		{"/help", false, "\n/help"},
+		{"/help", false, userMark + "/help"},
+		{"\n /goal pause or esc?", false, userMark + "/goal pause or esc?"},
 		{"  !ls", false, "\n!ls"},
 		{"# note", true, userMark + "# note"},
 		{"a\r\nb\x1b[201~c", false, "a\nb[201~c"},

@@ -1225,13 +1225,17 @@ func dropLeft() {
 // message sent while a turn is going, which Claude Code queues.
 func pasteable(text string, busy bool) string {
 	text = pasteClean(text)
-	// After a line break the prompt takes it as words: a space before it
-	// is trimmed, and a zero-width one taken out of the paste. Claude Code
-	// trims a queued message, though, and runs one opening with / as a
-	// command even so, or drops it: that one is marked as the user's
-	// words, as the bridge marks them after a tool's result.
+	// After a line break the prompt takes !, # and & as words: a space
+	// before it is trimmed, and a zero-width one taken out of the paste.
+	// Claude Code trims a queued message, though, and runs one opening
+	// with / as a command even so, or drops it; and a command it knows it
+	// runs after the line break too ("\n/goal clear" answered "No goal
+	// set", "\n/cost" opened its panel, where "\n/zzz a" was words; Claude
+	// Code 2.1.322), so a user's "/clear and start over" would clear the
+	// run's conversation. Those are marked as the user's words, as the
+	// bridge marks them after a tool's result.
 	if t := strings.TrimLeft(text, " \t\n"); t != "" && strings.ContainsRune("/!#&", rune(t[0])) {
-		if busy {
+		if busy || t[0] == '/' {
 			text = userMark + t
 		} else {
 			text = "\n" + t

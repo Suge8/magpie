@@ -247,8 +247,11 @@ talks to it as it talks to `-p`: stream-json in and out. The helper:
   Killing the gateway ended the distro's Claude Code with wsl.exe (tried
   on Windows 11 26200, magpie-desktop, Claude Code 2.1.289);
 - pastes each user message into the prompt (bracketed paste) and presses
-  Enter. A message opening with `/`, `!`, `#` or `&` is pasted after a
-  line break, so it is words, not a command (`pasteable`);
+  Enter. A message opening with `!`, `#` or `&` is pasted after a line
+  break, so it is words, not a shell line, a memory or a background task;
+  one opening with `/` is marked `[user message]` on a line before it,
+  since Claude Code runs a command it knows after a line break too
+  (`/goal`, `/cost`; 2.1.322) (`pasteable`);
 - pastes a message's images as files (`userPieces`, `writeImage`): each
   base64 image is written to `image-N.<ext>` (0600) in a
   `magpie-claude-images-*` temp folder, and its path is pasted alone,
